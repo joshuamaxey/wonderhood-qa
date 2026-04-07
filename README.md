@@ -48,7 +48,7 @@ npx playwright install
 Create a `.env` file based on `.env.example`:
 
 ```
-BASE_URL=https://your-wonderhood-site.org
+BASE_URL=https://whproject.org/
 ```
 
 ---
