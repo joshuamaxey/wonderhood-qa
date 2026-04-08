@@ -46,6 +46,20 @@ This repository contains Playwright end-to-end tests for the Wonderhood website.
 - Test directory is `./Flows`
 - Use relative navigation like `page.goto('/')`
 
+### Test Structure
+
+- Follow the C / B / A pattern in every test:
+  1. Configuration: navigate to the page and set up any preconditions
+  2. Behavior: perform the user action or behavior under test
+  3. Assertion: verify the result is what we expect
+
+- Add a comment for every block:
+  - Comment the purpose of the setup step
+  - Comment the user action being executed
+  - Comment the expected outcome being asserted
+
+- Keep comments focused on intent, not implementation details.
+
 ## Common Patterns
 
 - Use data-testid only if accessible selectors are not viable

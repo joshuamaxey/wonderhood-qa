@@ -1,0 +1,196 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - link "WonderHood logo WonderHood" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "WonderHood logo" [ref=e9]
+        - generic [ref=e10]: WonderHood
+      - generic [ref=e12]:
+        - link "About" [ref=e13] [cursor=pointer]:
+          - /url: /about
+          - text: About
+        - link "Events" [ref=e15] [cursor=pointer]:
+          - /url: /events
+          - text: Events
+        - link "Clubs Soon" [disabled] [ref=e17]:
+          - generic [ref=e18]:
+            - text: Clubs
+            - generic: Soon
+        - link "Get Involved" [ref=e19] [cursor=pointer]:
+          - /url: /get-involved
+          - text: Get Involved
+      - generic [ref=e22]:
+        - button "Login" [ref=e23] [cursor=pointer]
+        - button "Sign Up" [ref=e24] [cursor=pointer]
+  - button "Show donation panel" [ref=e26] [cursor=pointer]:
+    - img [ref=e28]
+    - generic [ref=e30]: Donate
+  - main [ref=e31]:
+    - main [ref=e32]:
+      - generic [ref=e35]:
+        - generic [ref=e37]:
+          - img "Kids outdoors" [ref=e38]
+          - generic [ref=e41]:
+            - heading "More than Just Homeschooling" [level=1] [ref=e42]
+            - paragraph [ref=e43]:
+              - generic [ref=e44]:
+                - text: Connection, adventure, and friendship for ages 10-18.
+                - text: Serving homeschool and online learners in Custer County, CO.
+            - link "Get Involved" [ref=e45] [cursor=pointer]:
+              - /url: /get-involved
+              - generic [ref=e46]: Get Involved
+        - generic [ref=e48]:
+          - img "Kids outdoors" [ref=e49]
+          - generic [ref=e52]:
+            - heading "A Place to Belong, Explore, and Create" [level=1] [ref=e53]
+            - paragraph [ref=e54]: For homeschoolers seeking fun, friendships, and meaningful adventures.
+            - link "Get Involved" [ref=e55] [cursor=pointer]:
+              - /url: /get-involved
+              - generic [ref=e56]: Get Involved
+        - generic [ref=e58]:
+          - img "Kids outdoors" [ref=e59]
+          - generic [ref=e62]:
+            - heading "Where Teens Connect & Grow" [level=1] [ref=e63]
+            - paragraph [ref=e64]: Creative activities, new friendships, real-life experiences.
+            - link "Get Involved" [ref=e65] [cursor=pointer]:
+              - /url: /get-involved
+              - generic [ref=e66]: Get Involved
+      - generic [ref=e71]:
+        - generic [ref=e73]:
+          - heading "Empowering Families Through Connection" [level=2] [ref=e74]
+          - paragraph [ref=e77]:
+            - text: We believe learning flourishes when families and children come together.
+            - text: WonderHood offers free, real-world experiences for homeschool and online learners, sparking new friendships, joyful discovery, and a sense of belonging in a vibrant community.
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - generic [ref=e80]: 12+
+              - generic [ref=e82]: Families Joined
+            - generic [ref=e83]:
+              - generic [ref=e84]: 48+
+              - generic [ref=e86]: Trips & Workshops Planned
+            - generic [ref=e87]:
+              - generic [ref=e88]: 44%
+              - generic [ref=e90]: Real-World Learning
+            - generic [ref=e91]:
+              - generic [ref=e92]: 41%
+              - generic [ref=e94]: Mission-Driven
+            - generic [ref=e95]:
+              - generic [ref=e96]: 38%
+              - generic [ref=e98]: Community-Focused
+        - generic [ref=e100]:
+          - generic [ref=e101]:
+            - heading "Our Story & Mission" [level=2] [ref=e103]
+            - generic [ref=e105]:
+              - paragraph [ref=e106]: WonderHood was created for Colorado homeschool and online learners ages 10-18 who need connection as much as education. Our pilot programming is launching in Custer County (Westcliffe and surrounding areas), with future expansion guided by partnerships and community needs.
+              - paragraph [ref=e107]: Learning outside traditional classrooms can be empowering, but it can also feel isolating, especially in rural communities where it can be harder to meet peers regularly.
+              - paragraph [ref=e108]: Our events give learners a place to belong. Families can choose the opportunities that excite them most. Through outdoor adventures, creative arts, STEAM exploration, and community projects, students build friendships, explore interests, and grow in confidence.
+          - generic [ref=e121]:
+            - img "Kids event" [ref=e124]
+            - img "Kids outdoors" [ref=e127]
+            - img "Indoor learning" [ref=e130]
+        - generic [ref=e132]:
+          - heading "How to Join" [level=2] [ref=e135]
+          - generic [ref=e137]:
+            - paragraph [ref=e138]: Getting started is simple!
+            - generic [ref=e140]:
+              - generic [ref=e142]:
+                - generic [ref=e143]: "1"
+                - paragraph [ref=e144]:
+                  - text: Create your
+                  - button "WonderHood account" [ref=e145] [cursor=pointer]
+                  - text: .
+              - generic [ref=e147]:
+                - generic [ref=e148]: "2"
+                - paragraph [ref=e149]: Add your child(ren) to complete their registration.
+              - generic [ref=e151]:
+                - generic [ref=e152]: "3"
+                - paragraph [ref=e153]:
+                  - text: Choose an
+                  - link "event" [ref=e154] [cursor=pointer]:
+                    - /url: /events
+                  - text: and enroll.
+            - paragraph [ref=e156]: WonderHood events are free for families, made possible through grants, donations, and community partners.
+        - generic [ref=e158]:
+          - generic [ref=e159]:
+            - generic [ref=e160]:
+              - heading "WonderHood Signature Clubs" [level=2] [ref=e161]
+              - generic [ref=e162]: COMING SOON
+            - paragraph [ref=e164]: Get ready for something new! Our upcoming WonderClubs will be ongoing, weekly programs designed to give homeschool and online learners a consistent space to learn, create, and connect. These year-round communities will offer deeper friendships, meaningful projects, and exciting opportunities to grow together.
+          - list [ref=e165]:
+            - article "Adventure & Outdoor Club" [ref=e166]:
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - img [ref=e171]
+                  - heading "Adventure & Outdoor Club" [level=3] [ref=e173]
+                - paragraph [ref=e174]: Builds confidence, teamwork, and a healthy love for nature. Our favorites are hiking, climbing, camping, and seasonal sports.
+            - article "Arts & Expression Club" [ref=e175]:
+              - generic [ref=e177]:
+                - generic [ref=e178]:
+                  - img [ref=e180]
+                  - heading "Arts & Expression Club" [level=3] [ref=e184]
+                - paragraph [ref=e185]: Encourages imagination, self-expression, and collaboration. We love creative writing, design, and hands-on workshops.
+            - article "STEM & Innovation Club" [ref=e186]:
+              - generic [ref=e188]:
+                - generic [ref=e189]:
+                  - img [ref=e191]
+                  - heading "STEM & Innovation Club" [level=3] [ref=e195]
+                - paragraph [ref=e196]: Where curiosity meets creativity, from coding to hands-on science experiments.
+            - article "Life Skills & Wellness Club" [ref=e197]:
+              - generic [ref=e199]:
+                - generic [ref=e200]:
+                  - img [ref=e202]
+                  - heading "Life Skills & Wellness Club" [level=3] [ref=e205]
+                - paragraph [ref=e206]: Promotes independence, resilience, and lifelong healthy habits. Practical skill development in nutrition, mindfulness, and healthy living.
+            - article "Leadership & Community Building Club" [ref=e207]:
+              - generic [ref=e209]:
+                - generic [ref=e210]:
+                  - img [ref=e212]
+                  - heading "Leadership & Community Building Club" [level=3] [ref=e216]
+                - paragraph [ref=e217]: Teens learn how to mentor and contribute through community service projects.
+          - paragraph [ref=e219]: Programs may vary by season as new local partnerships launch.
+        - generic [ref=e221]:
+          - paragraph [ref=e222]: Any questions? We’d love to hear from you!
+          - link "info@whproject.org" [ref=e224] [cursor=pointer]:
+            - /url: mailto:info@whproject.org
+  - contentinfo [ref=e225]:
+    - generic [ref=e226]:
+      - link "Support Us" [ref=e227] [cursor=pointer]:
+        - /url: /donate
+      - link "Partner With Us" [ref=e228] [cursor=pointer]:
+        - /url: /get-involved/partnership
+      - link "Volunteer" [ref=e229] [cursor=pointer]:
+        - /url: /volunteer
+      - link "FAQ" [ref=e230] [cursor=pointer]:
+        - /url: /faq
+      - link "Contact Us" [ref=e231] [cursor=pointer]:
+        - /url: /contact-us
+    - generic [ref=e232]:
+      - paragraph [ref=e233]: WonderHood is a registered 501(c)(3) non-profit organization. All donations are tax-deductible to the fullest extent allowed by law.
+      - generic [ref=e234]:
+        - generic [ref=e235]: © 2025 WonderHood. All rights reserved.
+        - link "Privacy Policy" [ref=e236] [cursor=pointer]:
+          - /url: /privacy-policy
+        - link "Anti Discrimination Policy" [ref=e237] [cursor=pointer]:
+          - /url: /anti-discrimination
+        - link "Terms of Service" [ref=e238] [cursor=pointer]:
+          - /url: /terms
+      - generic [ref=e239]:
+        - link "Facebook" [ref=e240] [cursor=pointer]:
+          - /url: https://www.facebook.com/p/WonderHood-Project-61578914429797/
+          - img "Facebook" [ref=e241]
+        - link "LinkedIn" [ref=e242] [cursor=pointer]:
+          - /url: https://www.linkedin.com/company/wonderhood-project/posts/?feedView=all
+          - img "LinkedIn" [ref=e243]
+  - generic [ref=e245]:
+    - generic [ref=e246]:
+      - paragraph [ref=e247]: We use cookies to improve the site. You can choose which cookies you allow.
+      - generic [ref=e248]:
+        - checkbox "Analytics cookies" [ref=e249]
+        - generic [ref=e250]: Analytics cookies
+      - generic [ref=e251]:
+        - checkbox "Advertising cookies" [ref=e252]
+        - generic [ref=e253]: Advertising cookies
+    - generic [ref=e254]:
+      - button "Decline cookies" [ref=e255] [cursor=pointer]: Decline
+      - button "Accept cookies" [ref=e256] [cursor=pointer]: Accept
+  - alert [ref=e257]
