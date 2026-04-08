@@ -1,13 +1,16 @@
-name: Playwright Tests
+name: Playwright Smoke Tests
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  workflow_dispatch:
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ secrets.BASE_URL }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
@@ -15,10 +18,12 @@ jobs:
         node-version: lts/*
     - name: Install dependencies
       run: npm ci
+    - name: Verify BASE_URL is configured
+      run: test -n "$BASE_URL"
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test
+    - name: Run Playwright smoke tests
+      run: npx playwright test Flows/smoke
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

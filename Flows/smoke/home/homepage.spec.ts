@@ -65,3 +65,23 @@ test("homepage shows expected footer elements", async ({ page }) => {
   await expect(footer.getByRole("link", { name: /facebook/i })).toBeVisible();
   await expect(footer.getByRole("link", { name: /linkedin/i })).toBeVisible();
 });
+
+test("homepage shows header navigation, header actions, primary cta, and cookie banner", async ({ page }) => {
+  // Configuration: navigate to the homepage before interacting with the initial cookie prompt.
+  await page.goto("/");
+
+  const acceptCookiesButton = page.getByRole("button", { name: /accept cookies/i });
+
+  // Behavior: confirm the cookie banner is shown, then dismiss it to continue using the homepage.
+  await expect(page.getByText(/we use cookies to improve the site/i)).toBeVisible();
+  await expect(acceptCookiesButton).toBeVisible();
+  await acceptCookiesButton.click();
+
+  // Assertion: the primary header navigation, header actions, and homepage call to action are visible after the banner is dismissed.
+  await expect(page.getByRole("link", { name: /^about$/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^events$/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^get involved$/i }).nth(0)).toBeVisible();
+  await expect(page.getByRole("button", { name: /^login$/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^sign up$/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^get involved$/i }).nth(1)).toBeVisible();
+});

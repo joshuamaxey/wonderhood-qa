@@ -123,8 +123,11 @@ Tests run automatically via GitHub Actions on:
 
 * Push to main
 * Pull requests
+* Manual runs from the Actions tab
 
 This provides visibility into test results but does not block deployments.
+
+GitHub Actions reads `BASE_URL` from a repository secret named `BASE_URL`. Set that secret in the repository settings before relying on CI runs.
 
 ---
 
