@@ -1,8 +1,10 @@
 import { test, expect } from "@playwright/test";
 
 test("homepage loads and displays main heading", async ({ page }) => {
+  // Navigate to Wonderhood
   await page.goto("/");
 
+  // Accept cookies
   const acceptCookiesButton = page.getByRole("button", { name: /accept cookies/i });
   if (await acceptCookiesButton.isVisible()) {
     await acceptCookiesButton.click();
