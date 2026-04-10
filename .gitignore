@@ -144,3 +144,8 @@ vite.config.ts.timestamp-*
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/.playwright-cli/
+
+# Local Codex tooling
+/.codex
+/.codex/
