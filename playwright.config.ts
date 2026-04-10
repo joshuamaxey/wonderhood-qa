@@ -14,13 +14,14 @@ export default defineConfig({
 
   use: {
     baseURL: process.env.BASE_URL,
+    headless: !!process.env.CI,
     trace: "on-first-retry",
   },
 
   projects: [
     {
-      name: "chrome",
-      use: { ...devices["Desktop Chrome"], channel: "chrome" },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"], browserName: "chromium" },
     },
   ],
 });
