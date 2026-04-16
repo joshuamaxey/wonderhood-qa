@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { loginWithTestUser } from "../../../utils/helpers/auth";
 
-test("Log in from the homepage", async ({ page }) => {
+test("Log in and log out from the homepage", async ({ page }) => {
   // Configuration: navigate to the homepage so the smoke login flow starts from the public site entry point.
   await page.goto("/");
 
