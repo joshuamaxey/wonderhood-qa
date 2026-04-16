@@ -13,5 +13,18 @@ test("Log in from the homepage", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: /notifications/i }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: /j joshua/i })).toBeVisible();
+  const profileMenuButton = page.getByRole("button", { name: /j joshua/i });
+  await expect(profileMenuButton).toBeVisible();
+
+  // Behavior: open the authenticated profile menu and choose the logout action.
+  await profileMenuButton.click();
+  await page.getByRole("button", { name: /logout/i }).click();
+
+  // Assertion: public header controls return after the user signs out successfully.
+  await expect(page.getByRole("button", { name: /^login$/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^sign up$/i })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /notifications/i }),
+  ).toBeHidden();
+  await expect(profileMenuButton).toBeHidden();
 });

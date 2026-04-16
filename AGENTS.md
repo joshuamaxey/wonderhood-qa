@@ -53,6 +53,9 @@ This repository contains Playwright end-to-end tests for the Wonderhood website.
   2. Behavior: perform the user action or behavior under test
   3. Assertion: verify the result is what we expect
 
+- C / B / A is the default structure, but additional `Behavior` and `Assertion` blocks are allowed when they continue the same user journey and avoid repeating expensive setup.
+- Prefer extending the same test for closely related follow-up actions, such as logging out after asserting a successful login, instead of creating a second test that repeats the same login steps.
+
 - Add a comment for every block:
   - Comment the purpose of the setup step
   - Comment the user action being executed
