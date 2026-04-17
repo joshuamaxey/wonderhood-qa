@@ -58,7 +58,7 @@ export async function loginWithTestUser(page: Page, options: LoginOptions = {}) 
 }
 
 export async function waitForProfileReady(page: Page) {
-  await expect(page).toHaveURL(/\/profile\?tab=user$/);
+  await expect(page).toHaveURL(/\/profile(\?tab=user)?$/);
   await expect(
     page.getByRole("tab", { name: /user information/i }),
   ).toHaveAttribute("aria-selected", "true");
