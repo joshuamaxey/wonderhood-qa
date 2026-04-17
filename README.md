@@ -154,6 +154,7 @@ GitHub Actions reads `BASE_URL` from a repository secret named `BASE_URL`. Set t
 * Add new tests to the appropriate `Flows/` folder
 * Use the C / B / A pattern by default: Configuration, Behavior, Assertion
 * It is acceptable to add another `Behavior` and `Assertion` pair in the same test when it extends the same user flow and avoids repeating setup such as logging in again just to verify logout
+* Prefer keeping assertions in dedicated `Assertion` blocks instead of mixing them into `Behavior` steps when the test can stay clear and readable
 
 ---
 
