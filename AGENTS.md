@@ -37,6 +37,9 @@ This repository contains Playwright end-to-end tests for the Wonderhood website.
 - Use `.env.example` for documented variables
 - Do not hardcode production credentials or sensitive data
 - Do not add backend-only assumptions to tests
+- Clean up any test data created by a flow whenever that is feasible and safe in the target environment.
+- Prefer cleanup at both the beginning and the end of flows that create persistent data.
+- End-of-flow cleanup handles the expected success path; start-of-flow cleanup handles leftovers from previously failed runs.
 
 ### Browser Coverage
 - Default browser project is Chromium unless explicitly asked to expand coverage
@@ -70,6 +73,13 @@ This repository contains Playwright end-to-end tests for the Wonderhood website.
 - Prefer getByRole over getByText when possible
 - Reuse helper functions from utils/ when available
 
+## Regression Notes
+
+- While writing or updating tests, proactively note any useful follow-up regression coverage that becomes apparent.
+- This applies during both smoke-test and regression-test work.
+- Record those follow-up ideas in `docs/regression-notes.md` without waiting for user approval so they are not lost.
+- Prefer capturing more potentially useful ideas rather than fewer when the follow-up coverage is plausible and user-visible.
+
 ## When Making Changes
 
 Before proposing a final change set:
@@ -89,3 +99,10 @@ npm install
 npx playwright test
 npx playwright test --ui
 npx playwright show-report
+```
+
+## Sandbox Note
+
+- Run Playwright commands outside the sandbox by default in this repository.
+- Chromium crashes when launched inside the sandbox in this environment, so sandboxed Playwright runs are not reliable for validation.
+- This applies to commands such as `npx playwright test`, `npx playwright test --ui`, and `npx playwright show-report`.

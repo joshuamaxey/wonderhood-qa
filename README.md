@@ -155,6 +155,8 @@ GitHub Actions reads `BASE_URL` from a repository secret named `BASE_URL`. Set t
 * Use the C / B / A pattern by default: Configuration, Behavior, Assertion
 * It is acceptable to add another `Behavior` and `Assertion` pair in the same test when it extends the same user flow and avoids repeating setup such as logging in again just to verify logout
 * Prefer keeping assertions in dedicated `Assertion` blocks instead of mixing them into `Behavior` steps when the test can stay clear and readable
+* When a flow creates persistent test data, prefer cleanup at both the start and end of the flow so the test remains repeatable after both successful and failed runs
+* When smoke-test work reveals deeper validation that should not live in smoke coverage, record it in `docs/regression-notes.md` before finishing the change
 
 ---
 
