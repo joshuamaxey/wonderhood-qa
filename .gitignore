@@ -150,3 +150,6 @@ vite.config.ts.timestamp-*
 # Local Codex tooling
 /.codex
 /.codex/
+
+# Local personal notes
+notes.md
