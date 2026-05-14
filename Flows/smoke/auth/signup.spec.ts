@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  cleanupSignupUserIfPresent,
+  deleteSignedInUserFromProfile,
   dismissCookieBanner,
   loginWithTestUser,
   waitForProfileReady,
@@ -38,7 +40,11 @@ test.describe.serial("signup smoke flow", () => {
       "The signup smoke flow requires the SIGNUP_USER1_* variables in .env.",
     );
 
-    // Configuration: navigate to the homepage and open the signup modal with the configured smoke test user details.
+    // Configuration: remove any leftover signup user, then navigate to the homepage and open the signup modal with the configured smoke test user details.
+    await cleanupSignupUserIfPresent(page, {
+      email: signupEmail!,
+      password: signupUser.password!,
+    });
     await page.goto("/");
     await dismissCookieBanner(page);
     await page.getByRole("button", { name: /^sign up$/i }).click();
@@ -126,25 +132,9 @@ test.describe.serial("signup smoke flow", () => {
       password: signupUser.password!,
     });
     await page.waitForTimeout(5_000);
-    await page.goto("/profile?tab=user");
-    await waitForProfileReady(page);
 
-    // Behavior: open the profile actions menu and confirm account deletion for the signed-in signup user.
-    await page.getByRole("button", { name: /more actions/i }).click();
-    await page.getByRole("button", { name: /^delete account$/i }).click();
-    const deleteAccountHeading = page.getByRole("heading", { name: /delete your account/i });
-    const deleteButton = page.getByRole("button", { name: /^delete$/i });
-    await expect(deleteAccountHeading).toBeVisible();
-    await expect(deleteButton).toBeEnabled();
-    await deleteButton.click();
-    await expect(page.getByRole("button", { name: /deleting/i })).toBeVisible();
-    await expect(deleteAccountHeading).toBeHidden({ timeout: 15_000 });
-
-    // Assertion: the user is returned to the public homepage with anonymous header actions visible again.
-    await expect(page).toHaveURL(/\/?$/, { timeout: 15_000 });
-    await expect(page.locator("#modal-background")).toBeHidden({ timeout: 15_000 });
-    await expect(page.getByRole("button", { name: /^login$/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /^sign up$/i })).toBeVisible();
+    // Behavior: delete the signed-in signup user from the profile page.
+    await deleteSignedInUserFromProfile(page);
 
     // Behavior: attempt to log back in with the deleted signup user credentials.
     await expect(async () => {

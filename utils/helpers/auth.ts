@@ -70,6 +70,48 @@ export async function waitForProfileReady(page: Page) {
   await expect(addChildEntry).toBeVisible();
 }
 
+export async function deleteSignedInUserFromProfile(page: Page) {
+  await page.goto("/profile?tab=user");
+  await waitForProfileReady(page);
+  await page.getByRole("button", { name: /more actions/i }).click();
+  await page.getByRole("button", { name: /^delete account$/i }).click();
+
+  const deleteAccountHeading = page.getByRole("heading", { name: /delete your account/i });
+  const deleteButton = page.getByRole("button", { name: /^delete$/i });
+
+  await expect(deleteAccountHeading).toBeVisible();
+  await expect(deleteButton).toBeEnabled();
+  await deleteButton.click();
+  await expect(page.getByRole("button", { name: /deleting/i })).toBeVisible();
+  await expect(deleteAccountHeading).toBeHidden({ timeout: 15_000 });
+  await expect(page).toHaveURL(/\/?$/, { timeout: 15_000 });
+  await expect(page.locator("#modal-background")).toBeHidden({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: /^login$/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^sign up$/i })).toBeVisible();
+}
+
+export async function cleanupSignupUserIfPresent(
+  page: Page,
+  credentials: Required<LoginOptions>,
+) {
+  await page.goto("/");
+
+  try {
+    await loginWithTestUser(page, credentials);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      /incorrect username or password/i.test(error.message)
+    ) {
+      return;
+    }
+
+    throw error;
+  }
+
+  await deleteSignedInUserFromProfile(page);
+}
+
 export async function openProfileChildInformation(page: Page) {
   await page.getByRole("button", { name: /j joshua/i }).click();
   await page.getByRole("link", { name: /^profile$/i }).click();
