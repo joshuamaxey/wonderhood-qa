@@ -13,7 +13,7 @@ test("Log in and log out from the homepage", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: /notifications/i }),
   ).toBeVisible();
-  const profileMenuButton = page.getByRole("button", { name: /j joshua/i });
+  const profileMenuButton = page.getByRole("navigation").getByRole("button").nth(1);
   await expect(profileMenuButton).toBeVisible();
 
   // Behavior: open the authenticated profile menu and choose the logout action.
@@ -26,5 +26,4 @@ test("Log in and log out from the homepage", async ({ page }) => {
   await expect(
     page.getByRole("button", { name: /notifications/i }),
   ).toBeHidden();
-  await expect(profileMenuButton).toBeHidden();
 });

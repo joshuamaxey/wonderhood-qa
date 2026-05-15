@@ -31,6 +31,7 @@ This repository contains Playwright end-to-end tests for the Wonderhood website.
 - Prefer accessible locators such as `getByRole`, `getByLabel`, and `getByText` when appropriate
 - Keep smoke tests fast and high-signal
 - Keep regression tests focused on real user flows
+- When an existing test fails after a site change, first confirm whether the changed behavior or content is intentional before updating the assertion or flow.
 
 ### Environment and Safety
 - Never commit secrets, credentials, or `.env`
@@ -86,9 +87,10 @@ Before proposing a final change set:
 
 1. Explain the planned change briefly
 2. Make the smallest reasonable change
-3. Keep naming and folder structure consistent
-4. Run the relevant validation commands
-5. Summarize what changed and any follow-up recommendations
+3. Confirm whether observed product changes are intentional before updating existing assertions or flow expectations
+4. Keep naming and folder structure consistent
+5. Run the relevant validation commands
+6. Summarize what changed and any follow-up recommendations
 
 ## Required Commands
 

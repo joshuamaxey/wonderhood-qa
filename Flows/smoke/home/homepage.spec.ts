@@ -36,7 +36,7 @@ test("homepage shows expected primary headings and donate button", async ({ page
   await expect(page.getByRole("heading", { level: 2, name: /our story.*mission/i })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: /how to join/i })).toBeVisible();
   await expect(
-    page.getByRole("heading", { level: 2, name: /wonderhood signature clubs/i }),
+    page.getByRole("heading", { level: 2, name: /wonderhood learning experiences/i }),
   ).toBeVisible();
 });
 
