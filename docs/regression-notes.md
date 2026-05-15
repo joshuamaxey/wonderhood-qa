@@ -19,3 +19,4 @@ Use this file to capture regression-test ideas discovered while building or main
 - Verify child deletion shows the expected confirmation modal content, including the correct child name.
 - Verify canceling child deletion leaves the child visible and unchanged.
 - Verify confirming child deletion removes the child from the profile list and prevents stale child details from remaining visible after refresh.
+- Verify a parent can add another child successfully when the account already has existing children.

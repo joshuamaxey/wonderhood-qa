@@ -6,6 +6,8 @@ import {
 } from "../../../utils/helpers/auth";
 
 const addChildFlowData = {
+  userEmail: process.env.ADD_CHILD_USER_EMAIL,
+  userPassword: process.env.ADD_CHILD_USER_PASSWORD,
   childFirstName: process.env.ADD_CHILD_CHILD_FIRST_NAME,
   childLastName: process.env.ADD_CHILD_CHILD_LAST_NAME,
   childPreferredName: process.env.ADD_CHILD_CHILD_PREFERRED_NAME,
@@ -56,7 +58,10 @@ async function expectChildCardToAppear(page: Page, childName: RegExp) {
 test("Starts the add-child flow from the profile page", async ({ page }) => {
   // Configuration: navigate to the homepage, sign in with the shared smoke user, and remove any leftover test child before starting.
   await page.goto("/");
-  await loginWithTestUser(page);
+  await loginWithTestUser(page, {
+    email: addChildFlowData.userEmail,
+    password: addChildFlowData.userPassword,
+  });
   await cleanupTestChildIfPresent(page, childDisplayNamePattern);
   await page.goto("/");
   await openProfileChildInformation(page);

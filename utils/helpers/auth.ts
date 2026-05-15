@@ -64,10 +64,6 @@ export async function waitForProfileReady(page: Page) {
   ).toHaveAttribute("aria-selected", "true");
   await expect(page.getByRole("button", { name: /more actions/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /more actions/i })).toBeEnabled();
-  const addChildEntry = page
-    .getByRole("link", { name: /add a child/i })
-    .or(page.getByRole("button", { name: /add a child/i }));
-  await expect(addChildEntry).toBeVisible();
 }
 
 export async function deleteSignedInUserFromProfile(page: Page) {
@@ -113,8 +109,7 @@ export async function cleanupSignupUserIfPresent(
 }
 
 export async function openProfileChildInformation(page: Page) {
-  await page.getByRole("button", { name: /j joshua/i }).click();
-  await page.getByRole("link", { name: /^profile$/i }).click();
+  await page.goto("/profile");
   await waitForProfileReady(page);
   await page.getByRole("tab", { name: /child's information/i }).click();
   await expect(
@@ -122,6 +117,9 @@ export async function openProfileChildInformation(page: Page) {
   ).toHaveAttribute("aria-selected", "true");
   await expect(
     page.getByRole("heading", { name: /your children's information/i }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /add a child/i }).or(page.getByRole("button", { name: /add a child/i })),
   ).toBeVisible();
 }
 
