@@ -1,10 +1,17 @@
 import { expect, type Page } from "@playwright/test";
 
 export async function dismissCookieBanner(page: Page) {
-  const acceptCookiesButton = page.getByRole("button", { name: /accept cookies/i });
-  if (await acceptCookiesButton.isVisible()) {
-    await expect(page.getByText(/we use cookies to improve the site/i)).toBeVisible();
+  const cookieBanner = page.locator(".CookieConsent");
+  const cookieBannerText = page.getByText(/we use cookies to improve the site/i);
+  const acceptCookiesButton = cookieBanner.getByRole("button", { name: /^accept( cookies)?$/i });
+
+  await cookieBanner.waitFor({ state: "visible", timeout: 3_000 }).catch(() => undefined);
+
+  if (await cookieBanner.isVisible().catch(() => false)) {
+    await expect(cookieBannerText).toBeVisible();
     await acceptCookiesButton.click();
+    await expect(cookieBanner).toBeHidden();
+    await expect(cookieBannerText).toBeHidden();
   }
 }
 
