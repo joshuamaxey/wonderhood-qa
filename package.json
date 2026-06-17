@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "open:dismiss-cookie": "npx playwright test --config=scripts/playwright.open.config.ts --headed",
+    "open:login": "OPEN_BROWSER_LOGIN=1 npx playwright test --config=scripts/playwright.open.config.ts --headed"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/joshuamaxey/wonderhood-qa.git"

@@ -10,6 +10,14 @@ Use this file to capture regression-test ideas discovered while building or main
 
 ## Backlog
 
+### Events Flow
+
+- Verify each Events carousel control scrolls the visible event cards in the expected direction.
+- Verify each Programs carousel control scrolls the visible program cards in the expected direction.
+- Verify opening `View Details` from an event card shows the expected event detail content and a clear return path.
+- Verify opening `View Details` from a program card shows the expected program detail content and a clear return path.
+- Verify event and program detail pages preserve user-visible capacity, date, time, location, and organizer details.
+
 ### Add Child Flow
 
 - Verify the confirmation page `Download PDF copy` action downloads a waiver PDF successfully.
