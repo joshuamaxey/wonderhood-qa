@@ -39,10 +39,10 @@ test("first event detail page displays Smokey Bear event content", async ({ page
   await expect(page.getByText(/mindy@westcusterlibrary\.org/i)).toBeVisible();
   await expect(page.getByText(/partner event/i)).toBeVisible();
   await expect(page.getByText(/participants/i)).toBeVisible();
-  await expect(page.getByText(/unlimited spots/i)).toBeVisible();
+  await expect(page.getByText(/max 20/i)).toBeVisible();
   await expect(page.getByText(/event date & time/i)).toBeVisible();
   await expect(page.getByText(/10:00 am\s*–\s*12:00 pm/i).first()).toBeVisible();
-  await expect(page.getByText(/jun\s*20\s*2026/i)).toBeVisible();
+  await expect(page.getByText(/jul\s*1\s*2027/i)).toBeVisible();
   await expect(page.getByText(/full address/i)).toBeVisible();
   await expect(page.getByText(/hermit park \/ westcliffe/i)).toBeVisible();
   await expect(page.getByText(/westcliffe, co 81252/i)).toBeVisible();
