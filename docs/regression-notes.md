@@ -17,6 +17,8 @@ Use this file to capture regression-test ideas discovered while building or main
 - Verify opening `View Details` from an event card shows the expected event detail content and a clear return path.
 - Verify opening `View Details` from a program card shows the expected program detail content and a clear return path.
 - Verify event and program detail pages preserve user-visible capacity, date, time, location, and organizer details.
+- Verify enrolled children can be managed from the event detail page without changing unrelated child enrollments.
+- Verify event enrollment capacity and spots remaining update correctly when multiple children or multiple accounts enroll.
 
 ### Add Child Flow
 
