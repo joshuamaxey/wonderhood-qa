@@ -7,7 +7,7 @@ import {
 
 const addChildFlowData = {
   userEmail: process.env.ADD_CHILD_USER_EMAIL,
-  userPassword: process.env.ADD_CHILD_USER_PASSWORD,
+  userPassword: process.env.ADD_CHILD_USER_PASSWORD || process.env.DEFAULT_PASS,
   childFirstName: process.env.ADD_CHILD_CHILD_FIRST_NAME,
   childLastName: process.env.ADD_CHILD_CHILD_LAST_NAME,
   childPreferredName: process.env.ADD_CHILD_CHILD_PREFERRED_NAME,

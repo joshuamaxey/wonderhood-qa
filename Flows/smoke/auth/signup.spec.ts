@@ -12,7 +12,7 @@ const signupUser = {
   lastName: process.env.SIGNUP_USER1_LASTNAME,
   email: process.env.SIGNUP_USER1_EMAIL,
   phone: process.env.SIGNUP_USER1_PHONE,
-  password: process.env.SIGNUP_USER1_PASS,
+  password: process.env.SIGNUP_USER1_PASS || process.env.DEFAULT_PASS,
   address: process.env.SIGNUP_USER1_ADDRESS,
   city: process.env.SIGNUP_USER1_CITY,
   state: process.env.SIGNUP_USER1_STATE,

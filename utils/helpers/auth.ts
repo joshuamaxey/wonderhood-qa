@@ -22,7 +22,7 @@ type LoginOptions = {
 
 export async function loginWithTestUser(page: Page, options: LoginOptions = {}) {
   const testUserEmail = options.email ?? process.env.TEST_USER1;
-  const testUserPassword = options.password ?? process.env.TEST_USER1_PASS;
+  const testUserPassword = options.password || process.env.TEST_USER1_PASS || process.env.DEFAULT_PASS;
 
   expect(
     testUserEmail,

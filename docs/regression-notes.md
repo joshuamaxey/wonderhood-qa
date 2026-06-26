@@ -19,6 +19,9 @@ Use this file to capture regression-test ideas discovered while building or main
 - Verify event and program detail pages preserve user-visible capacity, date, time, location, and organizer details.
 - Verify enrolled children can be managed from the event detail page without changing unrelated child enrollments.
 - Verify event enrollment capacity and spots remaining update correctly when multiple children or multiple accounts enroll.
+- Consider separate program enrollment coverage if enrichment programs diverge from the current event enrollment flow.
+- Cover admin `Notify Users` for enrolled event parents only after the test environment has a safe email sink or a guaranteed single test recipient.
+- Add deeper event edit coverage for image updates, registration method changes, label changes, and school-access eligibility rules.
 
 ### Add Child Flow
 

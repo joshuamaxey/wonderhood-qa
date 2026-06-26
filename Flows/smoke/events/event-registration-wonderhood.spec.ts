@@ -7,7 +7,7 @@ import { unenrollChildFromEventIfPresent } from "../../../utils/helpers/events";
 
 const eventRegistrationData = {
   userEmail: process.env.EVENT_REGISTRATION_USER_EMAIL,
-  userPassword: process.env.EVENT_REGISTRATION_USER_PASSWORD,
+  userPassword: process.env.EVENT_REGISTRATION_USER_PASSWORD || process.env.DEFAULT_PASS,
 };
 
 for (const [key, value] of Object.entries(eventRegistrationData)) {
@@ -15,7 +15,7 @@ for (const [key, value] of Object.entries(eventRegistrationData)) {
 }
 
 const eventNamePattern = /bridging the gap: parent–teen dialogue/i;
-const childNamePattern = /test child 1 maxey/i;
+const childNamePattern = /enrollmentwh child/i;
 
 async function openBridgingTheGapEvent(page: Page) {
   const eventCard = page.locator("article").filter({
