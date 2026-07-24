@@ -36,6 +36,7 @@ Use this file to capture regression-test ideas discovered while building or main
 
 ### Donation Flow
 
+- Pre-event placeholders for no-acknowledgement success, declined-card recovery, amount validation, stalled checkout, and mobile success are scaffolded in `Flows/regression/donations/donation-pre-event.spec.ts`.
 - Verify Stripe's declined-card test case leaves the donor on checkout with a clear, actionable error.
 - Verify incomplete Stripe card details prevent submission and identify the fields that need attention.
 - Verify canceling or abandoning checkout does not show a successful donation state.
