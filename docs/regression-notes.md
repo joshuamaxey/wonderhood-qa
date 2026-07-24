@@ -44,4 +44,5 @@ Use this file to capture regression-test ideas discovered while building or main
 - Verify both accepting and declining the tax-acknowledgement option lead to the intended user-visible outcome.
 - Verify the local payment return can set the protected tax-acknowledgement cookie when the frontend uses HTTP.
 - Verify tax acknowledgement is associated with the donation from the current Stripe session rather than another donor's recent Stripe event.
+- Add a protected staging-only cleanup mechanism keyed by Checkout Session ID so automated runs can remove their Donation, StripeEvent, and linked tax-acknowledgement records.
 - Verify the completed donation journey at mobile viewport sizes after the desktop critical path is stable.

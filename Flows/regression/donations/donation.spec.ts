@@ -89,18 +89,91 @@ test.describe("donation regression flow", () => {
     await expect(page.getByRole("link", { name: /wonderhood/i }).first()).toBeVisible();
   });
 
-  test.skip("visitor completes a Stripe test-mode donation", async ({ page }) => {
+  test("visitor completes a Stripe test-mode donation and requests an acknowledgement", async ({ page }) => {
+    // Cleanup requirement: after every completed payment run, capture its Stripe Checkout Session and event IDs, then manually remove the matching staging Donation, StripeEvent, and tax-acknowledgement records before considering the run complete.
+    test.setTimeout(180_000);
+    test.skip(
+      process.env.STRIPE_TEST_PAYMENT_ENABLED !== "true",
+      "Set STRIPE_TEST_PAYMENT_ENABLED=true only after the local Stripe test environment and cleanup plan are confirmed.",
+    );
+
     // Configuration: open the local donation form after test-mode Stripe keys, webhook forwarding, and staging data cleanup are confirmed.
     const donationTestConfig = requireStripeTestPaymentConfiguration();
     await page.goto("/donate");
     await dismissCookieBanner(page);
     await page.getByLabel(/donation amount/i).fill(String(donationTestConfig.donationAmount));
 
-    // Behavior: enter the configured test donation details and complete Stripe Embedded Checkout with an approved test card.
-    void donationTestConfig.donationEmail;
-    // TODO: implement after the test-mode checkout fields and intended post-payment journey can be inspected safely.
+    // Behavior: create a test Checkout Session from the configured donation amount.
+    const checkoutSessionResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        /\/payments\/?$/.test(response.url()),
+    );
+    await page.getByRole("button", { name: /proceed with donation/i }).click();
 
-    // Assertion: verify the intended success redirect, confirmation, and webhook-dependent user-visible outcome.
-    // TODO: implement after the Wonderhood team confirms the expected success and tax-acknowledgement behavior.
+    // Assertion: the application creates the test Checkout Session and shows Stripe Embedded Checkout in test mode.
+    await expect((await checkoutSessionResponse).status()).toBe(202);
+    const checkout = page.frameLocator('iframe[title="Embedded checkout"]');
+    await expect(checkout.getByText(/test mode/i)).toBeVisible();
+    await expect(checkout.getByText(/^donation$/i)).toBeVisible();
+
+    // Behavior: complete Stripe Checkout with the approved test card, synthetic billing details, and required agent disclosures.
+    await checkout.getByPlaceholder("email@example.com").fill(donationTestConfig.donationEmail);
+    await checkout.getByRole("radio").first().check({ force: true });
+    await checkout.getByRole("textbox", { name: /card number/i }).fill("4242424242424242");
+    await checkout.getByRole("textbox", { name: /expiration/i }).fill("1230");
+    await checkout.getByRole("textbox", { name: /^cvc$/i }).fill("123");
+    await checkout.getByLabel(/cardholder name/i).fill("Wonderhood QA");
+    await checkout.getByRole("textbox", { name: /zip/i }).fill("60601");
+
+    const saveWithLink = checkout.locator('input[name="enableStripePass"]');
+    if (await saveWithLink.isChecked()) {
+      await checkout.getByText(/save my information for faster checkout/i).click();
+    }
+
+    const actingForUserDisclosure = checkout.getByRole("checkbox", {
+      name: /ai agent acting on/i,
+    });
+    await actingForUserDisclosure.evaluate((checkbox: HTMLInputElement) => checkbox.click());
+    await expect(actingForUserDisclosure).toBeChecked();
+
+    const followedInstructionsDisclosure = checkout.getByRole("checkbox", {
+      name: /ai agent and have/i,
+    });
+    await followedInstructionsDisclosure.waitFor({ state: "attached" });
+    await followedInstructionsDisclosure.evaluate((checkbox: HTMLInputElement) => checkbox.click());
+    await expect(followedInstructionsDisclosure).toBeChecked();
+    const payButton = checkout.getByRole("button", { name: /^pay$/i });
+    await expect.poll(
+      () => payButton.getAttribute("class"),
+      { message: "Stripe Checkout should be complete before Pay is pressed." },
+    ).not.toContain("SubmitButton--incomplete");
+    await payButton.click();
+
+    // Assertion: a successful test payment reaches the protected tax-acknowledgement request.
+    await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
+    await expect(
+      page.getByText(/i agree to receive a donation\/sponsorship acknowledgement/i),
+    ).toBeVisible();
+    await expect(page.getByText(/skip this step by clicking the.*next.*button/i)).toBeVisible();
+
+    // Behavior: request an acknowledgement and submit synthetic donor credentials.
+    await page.getByRole("checkbox").first().check();
+    await page.getByPlaceholder("First Name").fill("Wonderhood");
+    await page.getByPlaceholder("Last Name").fill("QA");
+    await page.getByPlaceholder("example@example.com").fill(donationTestConfig.donationEmail);
+    await page.getByPlaceholder("Street Address").fill("123 Test Street");
+    await page.getByPlaceholder("City").fill("Chicago");
+    await page.getByPlaceholder("State").fill("IL");
+    await page.getByPlaceholder("Zip Code").fill("60601");
+    await page.getByRole("button", { name: /^next$/i }).click();
+
+    // Assertion: the donor returns home and sees the expected payment-success thank-you modal.
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByText(/thank you for your contribution/i)).toBeVisible();
+    await expect(
+      page.getByText(/payment was successful.*tax return was requested/i),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /^accept$/i })).toBeVisible();
   });
 });
