@@ -33,3 +33,15 @@ Use this file to capture regression-test ideas discovered while building or main
 - Verify canceling child deletion leaves the child visible and unchanged.
 - Verify confirming child deletion removes the child from the profile list and prevents stale child details from remaining visible after refresh.
 - Verify a parent can add another child successfully when the account already has existing children.
+
+### Donation Flow
+
+- Verify Stripe's declined-card test case leaves the donor on checkout with a clear, actionable error.
+- Verify incomplete Stripe card details prevent submission and identify the fields that need attention.
+- Verify canceling or abandoning checkout does not show a successful donation state.
+- Verify empty, zero, negative, and malformed donation amounts cannot create a Checkout Session.
+- Verify duplicate webhook delivery does not create a duplicate donation or duplicate user-visible acknowledgement.
+- Verify both accepting and declining the tax-acknowledgement option lead to the intended user-visible outcome.
+- Verify the local payment return can set the protected tax-acknowledgement cookie when the frontend uses HTTP.
+- Verify tax acknowledgement is associated with the donation from the current Stripe session rather than another donor's recent Stripe event.
+- Verify the completed donation journey at mobile viewport sizes after the desktop critical path is stable.

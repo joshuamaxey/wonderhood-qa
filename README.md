@@ -103,6 +103,8 @@ Examples:
 * Multi-step user journeys
 * Previously fixed bugs
 
+Donation regression setup, safety checks, and required local test-mode configuration are documented in [`docs/donation-testing.md`](docs/donation-testing.md).
+
 ---
 
 ## Configuration
