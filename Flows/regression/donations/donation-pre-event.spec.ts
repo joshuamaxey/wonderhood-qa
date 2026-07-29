@@ -1,15 +1,50 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import {
+  DonationFlow,
+  requireStripeTestPaymentConfiguration,
+} from "./donation.flow";
 
 test.describe("planned pre-event donation coverage", () => {
-  test.skip("visitor completes a donation without requesting an acknowledgement", async () => {
+  test("visitor completes a donation without requesting an acknowledgement", async ({ page }) => {
+    // Cleanup requirement: capture the completed Stripe session and manually remove its staging records until automated cleanup is available.
+    test.setTimeout(180_000);
+    test.skip(
+      process.env.STRIPE_TEST_PAYMENT_ENABLED !== "true",
+      "Enable completed test payments only after Stripe test mode and manual staging cleanup are confirmed.",
+    );
+
     // Configuration: start the approved local Stripe test environment, enable payment execution, and open the donation form with a cleanup plan ready.
-    // TODO: reuse the completed-payment configuration guard and Stripe Checkout helper from the primary donation regression.
+    const donationTestConfig = requireStripeTestPaymentConfiguration();
+    const donation = new DonationFlow(page);
+    await donation.openForm();
+    await donation.enterAmount(donationTestConfig.donationAmount);
 
-    // Behavior: complete a test-card payment, leave the acknowledgement checkbox unselected, and choose Next.
-    // TODO: capture the Checkout Session and event IDs needed for mandatory post-run cleanup.
+    // Behavior: create a test Checkout Session and complete Stripe Checkout with approved synthetic payment details.
+    const checkoutSessionResponse = await donation.proceedToCheckout();
+    await donation.fillStripePaymentDetails(donationTestConfig);
+    await donation.submitStripePayment();
 
-    // Assertion: the visitor returns home, sees the payment-success thank-you modal, and never sees or submits the credentials form.
-    // TODO: verify the exact Donation and StripeEvent records are manually removed before the run is considered complete.
+    // Assertion: the application accepts the session and opens the acknowledgement choice after successful payment.
+    await expect(checkoutSessionResponse.status()).toBe(202);
+    await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
+    await expect(donation.acknowledgementCheckbox).not.toBeChecked();
+    await expect(page.getByPlaceholder("First Name")).toBeHidden();
+
+    // Behavior: leave acknowledgement unselected and continue without submitting donor credentials.
+    const acknowledgementRequests: string[] = [];
+    page.on("request", (request) => {
+      if (request.method() === "POST" && /\/tax-return\/?$/.test(request.url())) {
+        acknowledgementRequests.push(request.url());
+      }
+    });
+    await donation.skipAcknowledgement();
+
+    // Assertion: the visitor returns home with a payment-success message and no acknowledgement request is submitted.
+    await expect(page).toHaveURL(/\/\?modal=taxReturnSuccess$/);
+    await expect(page.getByText(/thank you for your contribution/i)).toBeVisible();
+    await expect(page.getByText(/payment was successful/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /^accept$/i })).toBeVisible();
+    await expect.poll(() => acknowledgementRequests).toHaveLength(0);
   });
 
   test.skip("visitor recovers from a declined test card and completes the donation", async () => {
@@ -23,15 +58,34 @@ test.describe("planned pre-event donation coverage", () => {
     // TODO: remove the successful Donation, StripeEvent, and any acknowledgement record after verification.
   });
 
-  test.skip("donation form handles the pre-event amount validation matrix", async () => {
-    // Configuration: open a fresh donation form for each amount case and monitor whether POST /payments is sent.
-    // TODO: cover empty, zero, negative, decimal, malformed, and an agreed very-large amount.
+  test("donation form blocks amounts below its displayed minimum", async ({ page }) => {
+    const invalidAmounts = ["0", "-1"];
 
-    // Behavior: enter each amount and attempt to proceed exactly as a donor would.
-    // TODO: confirm the intended product rule for decimal donations because the frontend accepts decimals while the backend model expects an integer.
+    for (const invalidAmount of invalidAmounts) {
+      // Configuration: open a fresh donation form and monitor whether the app attempts to create a Checkout Session.
+      const donation = new DonationFlow(page);
+      await donation.openForm();
+      const paymentRequests: string[] = [];
+      const recordPaymentRequest = (request: { method(): string; url(): string }) => {
+        if (request.method() === "POST" && /\/payments\/?$/.test(request.url())) {
+          paymentRequests.push(request.url());
+        }
+      };
+      page.on("request", recordPaymentRequest);
 
-    // Assertion: invalid amounts show clear user-visible guidance and never create a Checkout Session, while supported amounts reach test-mode checkout with the exact displayed total.
-    // TODO: add boundary values after the team confirms minimum, maximum, and precision requirements.
+      // Behavior: enter an amount below the displayed one-dollar minimum and try to proceed.
+      await donation.enterAmount(invalidAmount);
+      await donation.proceedButton.click();
+
+      // Assertion: native validation identifies the invalid amount before any payment request is sent.
+      await expect.poll(
+        () => donation.amountField.evaluate((input: HTMLInputElement) => input.validity.valid),
+      ).toBe(false);
+      await expect.poll(() => paymentRequests).toHaveLength(0);
+      await expect(page).toHaveURL(/\/donate$/);
+
+      page.off("request", recordPaymentRequest);
+    }
   });
 
   test.skip("visitor receives a recoverable outcome when Stripe checkout stalls or fails", async () => {

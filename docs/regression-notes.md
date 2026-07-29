@@ -41,6 +41,9 @@ Use this file to capture regression-test ideas discovered while building or main
 - Verify incomplete Stripe card details prevent submission and identify the fields that need attention.
 - Verify canceling or abandoning checkout does not show a successful donation state.
 - Verify empty, zero, negative, and malformed donation amounts cannot create a Checkout Session.
+- Confirm and implement user-visible validation for empty and malformed donation amounts; both currently submit `POST /payments`, receive `422`, and leave the donor without recovery guidance.
+- Decide whether decimal donations are supported; the browser currently accepts them, while the integer backend contract returns `422` without user-visible guidance.
+- No upper donation limit is currently intended; keep routine payment tests small and treat very-large values as separate boundary coverage.
 - Verify duplicate webhook delivery does not create a duplicate donation or duplicate user-visible acknowledgement.
 - Verify both accepting and declining the tax-acknowledgement option lead to the intended user-visible outcome.
 - Verify the local payment return can set the protected tax-acknowledgement cookie when the frontend uses HTTP.

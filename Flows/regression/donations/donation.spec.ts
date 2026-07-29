@@ -1,30 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { dismissCookieBanner } from "../../../utils/helpers/auth";
-
-function requireStripeTestPaymentConfiguration() {
-  const baseURL = process.env.BASE_URL;
-  const paymentEnabled = process.env.STRIPE_TEST_PAYMENT_ENABLED === "true";
-  const donationAmount = Number(process.env.DONATION_TEST_AMOUNT);
-  const donationEmail = process.env.DONATION_TEST_EMAIL;
-
-  expect(paymentEnabled, "STRIPE_TEST_PAYMENT_ENABLED must be true for the completed-payment flow.").toBe(true);
-  expect(baseURL, "BASE_URL must be set for the completed-payment flow.").toBeTruthy();
-
-  const targetHost = new URL(baseURL!).hostname;
-  expect(
-    ["localhost", "127.0.0.1"].includes(targetHost),
-    `Completed Stripe test payments are restricted to a local target, not ${targetHost}.`,
-  ).toBe(true);
-  expect(
-    Number.isInteger(donationAmount) && donationAmount >= 1,
-    "DONATION_TEST_AMOUNT must be a positive whole-dollar amount.",
-  ).toBe(true);
-  expect(donationEmail, "DONATION_TEST_EMAIL must identify the approved test inbox.").toMatch(
-    /^[^@\s]+@[^@\s]+\.[^@\s]+$/,
-  );
-
-  return { donationAmount, donationEmail: donationEmail! };
-}
+import {
+  DonationFlow,
+  requireStripeTestPaymentConfiguration,
+} from "./donation.flow";
 
 test.describe("donation regression flow", () => {
   test("visitor opens the donation panel and reaches the donation form", async ({ page }) => {
@@ -55,8 +34,8 @@ test.describe("donation regression flow", () => {
 
   test("donation form prevents an amount below the displayed minimum", async ({ page }) => {
     // Configuration: open the donation form and track whether the browser sends a payment request.
-    await page.goto("/donate");
-    await dismissCookieBanner(page);
+    const donation = new DonationFlow(page);
+    await donation.openForm();
     const paymentRequests: string[] = [];
     page.on("request", (request) => {
       if (request.method() === "POST" && /\/payments\/?$/.test(request.url())) {
@@ -65,13 +44,12 @@ test.describe("donation regression flow", () => {
     });
 
     // Behavior: enter an amount below the field's minimum and try to proceed.
-    const donationAmount = page.getByLabel(/donation amount/i);
-    await donationAmount.fill("0");
-    await page.getByRole("button", { name: /proceed with donation/i }).click();
+    await donation.enterAmount("0");
+    await donation.proceedButton.click();
 
     // Assertion: native form validation identifies the invalid amount before any payment request is sent.
     await expect.poll(
-      () => donationAmount.evaluate((input: HTMLInputElement) => input.validity.valid),
+      () => donation.amountField.evaluate((input: HTMLInputElement) => input.validity.valid),
     ).toBe(false);
     await expect.poll(() => paymentRequests).toHaveLength(0);
     await expect(page).toHaveURL(/\/donate$/);
@@ -99,56 +77,21 @@ test.describe("donation regression flow", () => {
 
     // Configuration: open the local donation form after test-mode Stripe keys, webhook forwarding, and staging data cleanup are confirmed.
     const donationTestConfig = requireStripeTestPaymentConfiguration();
-    await page.goto("/donate");
-    await dismissCookieBanner(page);
-    await page.getByLabel(/donation amount/i).fill(String(donationTestConfig.donationAmount));
+    const donation = new DonationFlow(page);
+    await donation.openForm();
+    await donation.enterAmount(donationTestConfig.donationAmount);
 
     // Behavior: create a test Checkout Session from the configured donation amount.
-    const checkoutSessionResponse = page.waitForResponse(
-      (response) =>
-        response.request().method() === "POST" &&
-        /\/payments\/?$/.test(response.url()),
-    );
-    await page.getByRole("button", { name: /proceed with donation/i }).click();
+    const checkoutSessionResponse = await donation.proceedToCheckout();
 
     // Assertion: the application creates the test Checkout Session and shows Stripe Embedded Checkout in test mode.
-    await expect((await checkoutSessionResponse).status()).toBe(202);
-    const checkout = page.frameLocator('iframe[title="Embedded checkout"]');
-    await expect(checkout.getByText(/test mode/i)).toBeVisible();
-    await expect(checkout.getByText(/^donation$/i)).toBeVisible();
+    await expect(checkoutSessionResponse.status()).toBe(202);
+    await expect(donation.checkout.getByText(/test mode/i)).toBeVisible();
+    await expect(donation.checkout.getByText(/^donation$/i)).toBeVisible();
 
     // Behavior: complete Stripe Checkout with the approved test card, synthetic billing details, and required agent disclosures.
-    await checkout.getByPlaceholder("email@example.com").fill(donationTestConfig.donationEmail);
-    await checkout.getByRole("radio").first().check({ force: true });
-    await checkout.getByRole("textbox", { name: /card number/i }).fill("4242424242424242");
-    await checkout.getByRole("textbox", { name: /expiration/i }).fill("1230");
-    await checkout.getByRole("textbox", { name: /^cvc$/i }).fill("123");
-    await checkout.getByLabel(/cardholder name/i).fill("Wonderhood QA");
-    await checkout.getByRole("textbox", { name: /zip/i }).fill("60601");
-
-    const saveWithLink = checkout.locator('input[name="enableStripePass"]');
-    if (await saveWithLink.isChecked()) {
-      await checkout.getByText(/save my information for faster checkout/i).click();
-    }
-
-    const actingForUserDisclosure = checkout.getByRole("checkbox", {
-      name: /ai agent acting on/i,
-    });
-    await actingForUserDisclosure.evaluate((checkbox: HTMLInputElement) => checkbox.click());
-    await expect(actingForUserDisclosure).toBeChecked();
-
-    const followedInstructionsDisclosure = checkout.getByRole("checkbox", {
-      name: /ai agent and have/i,
-    });
-    await followedInstructionsDisclosure.waitFor({ state: "attached" });
-    await followedInstructionsDisclosure.evaluate((checkbox: HTMLInputElement) => checkbox.click());
-    await expect(followedInstructionsDisclosure).toBeChecked();
-    const payButton = checkout.getByRole("button", { name: /^pay$/i });
-    await expect.poll(
-      () => payButton.getAttribute("class"),
-      { message: "Stripe Checkout should be complete before Pay is pressed." },
-    ).not.toContain("SubmitButton--incomplete");
-    await payButton.click();
+    await donation.fillStripePaymentDetails(donationTestConfig);
+    await donation.submitStripePayment();
 
     // Assertion: a successful test payment reaches the protected tax-acknowledgement request.
     await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
@@ -158,15 +101,7 @@ test.describe("donation regression flow", () => {
     await expect(page.getByText(/skip this step by clicking the.*next.*button/i)).toBeVisible();
 
     // Behavior: request an acknowledgement and submit synthetic donor credentials.
-    await page.getByRole("checkbox").first().check();
-    await page.getByPlaceholder("First Name").fill("Wonderhood");
-    await page.getByPlaceholder("Last Name").fill("QA");
-    await page.getByPlaceholder("example@example.com").fill(donationTestConfig.donationEmail);
-    await page.getByPlaceholder("Street Address").fill("123 Test Street");
-    await page.getByPlaceholder("City").fill("Chicago");
-    await page.getByPlaceholder("State").fill("IL");
-    await page.getByPlaceholder("Zip Code").fill("60601");
-    await page.getByRole("button", { name: /^next$/i }).click();
+    await donation.requestAcknowledgement(donationTestConfig);
 
     // Assertion: the donor returns home and sees the expected payment-success thank-you modal.
     await expect(page).toHaveURL(/\/$/);
