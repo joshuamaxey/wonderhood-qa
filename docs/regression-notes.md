@@ -36,17 +36,15 @@ Use this file to capture regression-test ideas discovered while building or main
 
 ### Donation Flow
 
-- Pre-event placeholders for no-acknowledgement success, declined-card recovery, amount validation, stalled checkout, and mobile success are scaffolded in `Flows/regression/donations/donation-pre-event.spec.ts`.
-- Verify Stripe's declined-card test case leaves the donor on checkout with a clear, actionable error.
+- Pre-event coverage for no-acknowledgement success, declined-card recovery, amount validation, recoverable Checkout Session failure, and mobile success is implemented in `Flows/regression/donations/donation-pre-event.spec.ts`.
 - Verify incomplete Stripe card details prevent submission and identify the fields that need attention.
 - Verify canceling or abandoning checkout does not show a successful donation state.
+- Verify repeated activation while Checkout Session creation is pending cannot create duplicate sessions; the Proceed button currently remains enabled with unchanged text during a delayed request.
+- Verify a Stripe processing stall after Pay is distinct from a recoverable `POST /payments` failure and never produces a false success state.
 - Verify empty, zero, negative, and malformed donation amounts cannot create a Checkout Session.
 - Confirm and implement user-visible validation for empty and malformed donation amounts; both currently submit `POST /payments`, receive `422`, and leave the donor without recovery guidance.
 - Decide whether decimal donations are supported; the browser currently accepts them, while the integer backend contract returns `422` without user-visible guidance.
 - No upper donation limit is currently intended; keep routine payment tests small and treat very-large values as separate boundary coverage.
 - Verify duplicate webhook delivery does not create a duplicate donation or duplicate user-visible acknowledgement.
-- Verify both accepting and declining the tax-acknowledgement option lead to the intended user-visible outcome.
-- Verify the local payment return can set the protected tax-acknowledgement cookie when the frontend uses HTTP.
-- Verify tax acknowledgement is associated with the donation from the current Stripe session rather than another donor's recent Stripe event.
-- Add a protected staging-only cleanup mechanism keyed by Checkout Session ID so automated runs can remove their Donation, StripeEvent, and linked tax-acknowledgement records.
-- Verify the completed donation journey at mobile viewport sizes after the desktop critical path is stable.
+- Verify additional acknowledgement-field validation and correction paths beyond the completed accept/decline journeys.
+- Verify the protected cleanup endpoint returns `nothing_to_clean` for an unpaid Checkout Session; it currently raises an internal error while trying to access an unavailable `dinnerpayment` Prisma client attribute.

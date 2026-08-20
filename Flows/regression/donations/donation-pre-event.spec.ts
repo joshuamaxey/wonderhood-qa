@@ -1,19 +1,22 @@
 import { expect, test } from "@playwright/test";
 import {
+  checkoutSessionIdFromResponse,
+  cleanupDonationSession,
   DonationFlow,
   requireStripeTestPaymentConfiguration,
 } from "./donation.flow";
+import { dismissCookieBanner } from "../../../utils/helpers/auth";
 
-test.describe("planned pre-event donation coverage", () => {
-  test("visitor completes a donation without requesting an acknowledgement", async ({ page }) => {
-    // Cleanup requirement: capture the completed Stripe session and manually remove its staging records until automated cleanup is available.
+test.describe("pre-event donation coverage", () => {
+  test("visitor completes a donation without requesting an acknowledgement", async ({ page, request }) => {
+    // Cleanup requirement: capture the exact Stripe Checkout Session and remove its linked staging records after the journey.
     test.setTimeout(180_000);
     test.skip(
       process.env.STRIPE_TEST_PAYMENT_ENABLED !== "true",
       "Enable completed test payments only after Stripe test mode and manual staging cleanup are confirmed.",
     );
 
-    // Configuration: start the approved local Stripe test environment, enable payment execution, and open the donation form with a cleanup plan ready.
+    // Configuration: start the approved local Stripe test environment, enable payment execution, and open the donation form with automatic cleanup ready.
     const donationTestConfig = requireStripeTestPaymentConfiguration();
     const donation = new DonationFlow(page);
     await donation.openForm();
@@ -21,41 +24,74 @@ test.describe("planned pre-event donation coverage", () => {
 
     // Behavior: create a test Checkout Session and complete Stripe Checkout with approved synthetic payment details.
     const checkoutSessionResponse = await donation.proceedToCheckout();
+    const sessionId = await checkoutSessionIdFromResponse(checkoutSessionResponse);
     await donation.fillStripePaymentDetails(donationTestConfig);
-    await donation.submitStripePayment();
 
-    // Assertion: the application accepts the session and opens the acknowledgement choice after successful payment.
-    await expect(checkoutSessionResponse.status()).toBe(202);
-    await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
-    await expect(donation.acknowledgementCheckbox).not.toBeChecked();
-    await expect(page.getByPlaceholder("First Name")).toBeHidden();
+    try {
+      await donation.submitSuccessfulStripePayment();
 
-    // Behavior: leave acknowledgement unselected and continue without submitting donor credentials.
-    const acknowledgementRequests: string[] = [];
-    page.on("request", (request) => {
-      if (request.method() === "POST" && /\/tax-return\/?$/.test(request.url())) {
-        acknowledgementRequests.push(request.url());
-      }
-    });
-    await donation.skipAcknowledgement();
+      // Assertion: the application accepts the session and opens the acknowledgement choice after successful payment.
+      await expect(checkoutSessionResponse.status()).toBe(202);
+      await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
+      await expect(donation.acknowledgementCheckbox).not.toBeChecked();
+      await expect(page.getByPlaceholder("First Name")).toBeHidden();
 
-    // Assertion: the visitor returns home with a payment-success message and no acknowledgement request is submitted.
-    await expect(page).toHaveURL(/\/\?modal=taxReturnSuccess$/);
-    await expect(page.getByText(/thank you for your contribution/i)).toBeVisible();
-    await expect(page.getByText(/payment was successful/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /^accept$/i })).toBeVisible();
-    await expect.poll(() => acknowledgementRequests).toHaveLength(0);
+      // Behavior: leave acknowledgement unselected and continue without submitting donor credentials.
+      const acknowledgementRequests: string[] = [];
+      page.on("request", (observedRequest) => {
+        if (observedRequest.method() === "POST" && /\/tax-return\/?$/.test(observedRequest.url())) {
+          acknowledgementRequests.push(observedRequest.url());
+        }
+      });
+      await donation.skipAcknowledgement();
+
+      // Assertion: the visitor returns home with a payment-success message and no acknowledgement request is submitted.
+      await expect(page).toHaveURL(/\/\?modal=taxReturnSuccess$/);
+      await expect(page.getByText(/thank you for your contribution/i)).toBeVisible();
+      await expect(page.getByText(/payment was successful/i)).toBeVisible();
+      await expect(page.getByRole("button", { name: /^accept$/i })).toBeVisible();
+      await expect.poll(() => acknowledgementRequests).toHaveLength(0);
+    } finally {
+      await cleanupDonationSession(request, sessionId);
+    }
   });
 
-  test.skip("visitor recovers from a declined test card and completes the donation", async () => {
+  test("visitor recovers from a declined test card and completes the donation", async ({ page, request }) => {
+    test.setTimeout(180_000);
+    test.skip(
+      process.env.STRIPE_TEST_PAYMENT_ENABLED !== "true",
+      "Enable completed test payments only after Stripe test mode and staging cleanup are confirmed.",
+    );
+
     // Configuration: open Stripe Embedded Checkout locally with the approved test inbox and a cleanup plan ready.
-    // TODO: identify the Stripe declined-card number that matches the failure mode the team wants to support.
+    const donationTestConfig = requireStripeTestPaymentConfiguration();
+    const donation = new DonationFlow(page);
+    await donation.openForm();
+    await donation.enterAmount(donationTestConfig.donationAmount);
+    const checkoutResponse = await donation.proceedToCheckout();
+    const sessionId = await checkoutSessionIdFromResponse(checkoutResponse);
+    await donation.fillStripePaymentDetails(donationTestConfig, "4000000000000002");
 
     // Behavior: submit the declined test card, observe the error, replace it with the successful test card, and retry payment.
-    // TODO: keep the same donor journey active instead of creating a fresh application Checkout Session unless Stripe requires it.
+    await donation.submitStripePayment();
 
-    // Assertion: Stripe explains the decline, no false success state appears, the retry succeeds, and only the successful payment creates staging records.
-    // TODO: remove the successful Donation, StripeEvent, and any acknowledgement record after verification.
+    // Assertion: Stripe explains the decline and the visitor remains outside the success journey.
+    await expect(
+      donation.checkout.getByText(/your credit card was declined.*try paying with a debit card/i),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/donate$/);
+
+    // Behavior: replace the declined card with Stripe's successful test card and retry in the same Checkout Session.
+    await donation.checkout.getByRole("textbox", { name: /card number/i }).fill("4242424242424242");
+    try {
+      await donation.submitSuccessfulStripePayment();
+
+      // Assertion: the retry succeeds and reaches the acknowledgement choice without creating a second application checkout.
+      await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
+      await expect(donation.acknowledgementCheckbox).not.toBeChecked();
+    } finally {
+      await cleanupDonationSession(request, sessionId);
+    }
   });
 
   test("donation form blocks amounts below its displayed minimum", async ({ page }) => {
@@ -88,25 +124,74 @@ test.describe("planned pre-event donation coverage", () => {
     }
   });
 
-  test.skip("visitor receives a recoverable outcome when Stripe checkout stalls or fails", async () => {
-    // Configuration: open local test-mode checkout and arrange an approved way to simulate a failed session request or a Stripe processing stall.
-    // TODO: avoid production traffic and avoid force-clicking controls that Stripe still marks incomplete.
+  test("visitor recovers when Checkout Session creation fails", async ({ page }) => {
+    // Configuration: open the local donation form and replace only the Checkout Session response with a controlled failure.
+    const donation = new DonationFlow(page);
+    await donation.openForm();
+    await donation.enterAmount(1);
+    await page.route(/\/payments\/?$/, async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: '{"detail":"Unavailable"}',
+      });
+    });
 
-    // Behavior: attempt payment under the simulated failure and wait for the application's documented timeout or error handling.
-    // TODO: cover both POST /payments failure and the observed Pay-processing-without-redirect state.
+    // Behavior: attempt to proceed while Checkout Session creation is unavailable.
+    await donation.proceedButton.click();
 
-    // Assertion: the visitor sees a clear error or retry path, remains out of the success journey, and no completed-payment records are created.
-    // TODO: verify retrying does not accidentally create duplicate Checkout Sessions or donations.
+    // Assertion: the visitor sees recovery guidance, remains on the donation form, and never enters checkout or a false success state.
+    await expect(
+      page.getByText(/we couldn't process that donation amount.*check it and try again/i),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/\/donate$/);
+    await expect(page.locator('iframe[title="Embedded checkout"]')).toHaveCount(0);
+    await expect(page.getByText(/payment was successful/i)).toHaveCount(0);
+
+    // Behavior: restore the local endpoint and retry from the same donation form.
+    await page.unroute(/\/payments\/?$/);
+    const retryResponse = await donation.proceedToCheckout();
+
+    // Assertion: retrying creates a test Checkout Session and opens embedded checkout without reloading the journey.
+    await expect(retryResponse.status()).toBe(202);
+    await expect(donation.checkout.getByText(/test mode/i)).toBeVisible();
   });
 
-  test.skip("mobile visitor completes the critical donation journey", async () => {
+  test("mobile visitor completes the critical donation journey", async ({ page, request }) => {
+    test.setTimeout(180_000);
+    test.skip(
+      process.env.STRIPE_TEST_PAYMENT_ENABLED !== "true",
+      "Enable completed test payments only after Stripe test mode and staging cleanup are confirmed.",
+    );
+
     // Configuration: use an agreed mobile browser viewport against the approved local Stripe test environment with cleanup ready.
-    // TODO: confirm the floating donation trigger, cookie controls, and embedded checkout are usable without desktop-only layout assumptions.
+    await page.setViewportSize({ width: 390, height: 844 });
+    const donationTestConfig = requireStripeTestPaymentConfiguration();
+    await page.goto("/");
+    await dismissCookieBanner(page);
 
     // Behavior: open the donation panel, complete a test-card payment, decline acknowledgement, and return home.
-    // TODO: scroll through Stripe naturally and verify Card, Pay, and post-payment controls remain reachable.
+    await page.getByRole("button", { name: /show donation panel/i }).click();
+    await page.getByRole("link", { name: /^donate$/i }).click();
+    const donation = new DonationFlow(page);
+    await donation.enterAmount(donationTestConfig.donationAmount);
+    const checkoutResponse = await donation.proceedToCheckout();
+    const sessionId = await checkoutSessionIdFromResponse(checkoutResponse);
+    await donation.fillStripePaymentDetails(donationTestConfig);
+    try {
+      await donation.submitSuccessfulStripePayment();
+      await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
+      await donation.skipAcknowledgement();
 
     // Assertion: every critical control and message is visible without clipping, the success modal is usable, and no horizontal overflow blocks the journey.
-    // TODO: remove the exact Donation and StripeEvent records and document the tested viewport.
+      await expect(page).toHaveURL(/\/\?modal=taxReturnSuccess$/);
+      await expect(page.getByText(/payment was successful/i)).toBeVisible();
+      await expect(page.getByRole("button", { name: /^accept$/i })).toBeVisible();
+      await expect.poll(
+        () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
+      ).toBe(true);
+    } finally {
+      await cleanupDonationSession(request, sessionId);
+    }
   });
 });

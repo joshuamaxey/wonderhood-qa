@@ -1,4 +1,10 @@
-import { expect, type FrameLocator, type Page, type Response } from "@playwright/test";
+import {
+  expect,
+  type APIRequestContext,
+  type FrameLocator,
+  type Page,
+  type Response,
+} from "@playwright/test";
 import { dismissCookieBanner } from "../../../utils/helpers/auth";
 
 export type DonationTestConfiguration = {
@@ -32,6 +38,55 @@ export function requireStripeTestPaymentConfiguration(): DonationTestConfigurati
   );
 
   return { donationAmount, donationEmail: donationEmail! };
+}
+
+export async function cleanupDonationSession(
+  request: APIRequestContext,
+  sessionId: string,
+) {
+  const apiURL = process.env.DONATION_TEST_API_URL ?? "http://127.0.0.1:8000";
+  const apiHost = new URL(apiURL).hostname;
+  expect(
+    ["localhost", "127.0.0.1"].includes(apiHost),
+    `Donation cleanup is restricted to a local API target, not ${apiHost}.`,
+  ).toBe(true);
+
+  const adminEmail = process.env.DONATION_CLEANUP_ADMIN_EMAIL || process.env.EVENT_EDIT_ADMIN_EMAIL;
+  const adminPassword =
+    process.env.DONATION_CLEANUP_ADMIN_PASSWORD ||
+    process.env.EVENT_EDIT_ADMIN_PASSWORD ||
+    process.env.DEFAULT_PASS;
+  expect(adminEmail, "A staging admin email is required for donation cleanup.").toBeTruthy();
+  expect(adminPassword, "A staging admin password is required for donation cleanup.").toBeTruthy();
+
+  const loginResponse = await request.post(`${apiURL}/auth/token`, {
+    form: { username: adminEmail!, password: adminPassword! },
+  });
+  expect(loginResponse.status(), "Donation cleanup admin authentication should succeed.").toBe(200);
+  const { access_token: accessToken } = await loginResponse.json();
+
+  const cleanupResponse = await request.delete(`${apiURL}/payments/cleanup/${sessionId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  expect(cleanupResponse.status(), `Cleanup should succeed for ${sessionId}.`).toBe(200);
+  const cleanupResult = await cleanupResponse.json();
+  expect(cleanupResult.status, `Cleanup should remove records for ${sessionId}.`).toBe("cleaned");
+  expect(
+    cleanupResult.removed.map((record: { type: string }) => record.type),
+    `Cleanup should remove the Donation for ${sessionId}.`,
+  ).toContain("Donations");
+  return cleanupResult;
+}
+
+export async function checkoutSessionIdFromResponse(response: Response): Promise<string> {
+  const body = await response.json();
+  const clientSecret = body["client-secret"];
+  expect(clientSecret, "Checkout Session creation should return a client secret.").toBeTruthy();
+  const sessionId = String(clientSecret).match(/^(cs_test_.+?)_secret_/)?.[1];
+  expect(sessionId, "The client secret should identify a Stripe test Checkout Session.").toMatch(
+    /^cs_test_/,
+  );
+  return sessionId!;
 }
 
 export class DonationFlow {
@@ -95,10 +150,9 @@ export class DonationFlow {
 
     const saveWithLink = this.checkout.locator('input[name="enableStripePass"]');
     if (await saveWithLink.isChecked()) {
-      await this.checkout
-        .getByText(/save my information for faster checkout/i)
-        .click();
+      await saveWithLink.evaluate((checkbox: HTMLInputElement) => checkbox.click());
     }
+    await expect(saveWithLink).not.toBeChecked();
 
     const actingForUserDisclosure = this.checkout.getByRole("checkbox", {
       name: /ai agent acting on/i,
@@ -121,6 +175,19 @@ export class DonationFlow {
       { message: "Stripe Checkout should be complete before Pay is pressed." },
     ).not.toContain("SubmitButton--incomplete");
     await payButton.click();
+  }
+
+  async submitSuccessfulStripePayment() {
+    const verificationRequest = this.page.waitForRequest(
+      (request) => /\/payments\/verify\?session_id=cs_test_/.test(request.url()),
+      { timeout: 60_000 },
+    );
+    await this.submitStripePayment();
+    const verificationURL = new URL((await verificationRequest).url());
+    const verifiedSessionId = verificationURL.searchParams.get("session_id");
+    expect(verifiedSessionId, "The successful payment redirect should identify its Checkout Session.").toMatch(
+      /^cs_test_/,
+    );
   }
 
   async requestAcknowledgement(configuration: DonationTestConfiguration) {

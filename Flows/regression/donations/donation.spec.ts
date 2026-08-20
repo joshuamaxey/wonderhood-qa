@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { dismissCookieBanner } from "../../../utils/helpers/auth";
 import {
+  checkoutSessionIdFromResponse,
+  cleanupDonationSession,
   DonationFlow,
   requireStripeTestPaymentConfiguration,
 } from "./donation.flow";
@@ -67,8 +69,8 @@ test.describe("donation regression flow", () => {
     await expect(page.getByRole("link", { name: /wonderhood/i }).first()).toBeVisible();
   });
 
-  test("visitor completes a Stripe test-mode donation and requests an acknowledgement", async ({ page }) => {
-    // Cleanup requirement: after every completed payment run, capture its Stripe Checkout Session and event IDs, then manually remove the matching staging Donation, StripeEvent, and tax-acknowledgement records before considering the run complete.
+  test("visitor completes a Stripe test-mode donation and requests an acknowledgement", async ({ page, request }) => {
+    // Cleanup requirement: capture the exact Stripe Checkout Session and remove its linked staging records after the journey.
     test.setTimeout(180_000);
     test.skip(
       process.env.STRIPE_TEST_PAYMENT_ENABLED !== "true",
@@ -83,6 +85,7 @@ test.describe("donation regression flow", () => {
 
     // Behavior: create a test Checkout Session from the configured donation amount.
     const checkoutSessionResponse = await donation.proceedToCheckout();
+    const sessionId = await checkoutSessionIdFromResponse(checkoutSessionResponse);
 
     // Assertion: the application creates the test Checkout Session and shows Stripe Embedded Checkout in test mode.
     await expect(checkoutSessionResponse.status()).toBe(202);
@@ -91,24 +94,31 @@ test.describe("donation regression flow", () => {
 
     // Behavior: complete Stripe Checkout with the approved test card, synthetic billing details, and required agent disclosures.
     await donation.fillStripePaymentDetails(donationTestConfig);
-    await donation.submitStripePayment();
+    try {
+      await donation.submitSuccessfulStripePayment();
 
-    // Assertion: a successful test payment reaches the protected tax-acknowledgement request.
-    await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
-    await expect(
-      page.getByText(/i agree to receive a donation\/sponsorship acknowledgement/i),
-    ).toBeVisible();
-    await expect(page.getByText(/skip this step by clicking the.*next.*button/i)).toBeVisible();
+      // Assertion: a successful test payment reaches the protected tax-acknowledgement request.
+      await expect(page).toHaveURL(/\/tax-return$/, { timeout: 120_000 });
+      await expect(
+        page.getByText(/i agree to receive a donation\/sponsorship acknowledgement/i),
+      ).toBeVisible();
+      await expect(page.getByText(/skip this step by clicking the.*next.*button/i)).toBeVisible();
 
-    // Behavior: request an acknowledgement and submit synthetic donor credentials.
-    await donation.requestAcknowledgement(donationTestConfig);
+      // Behavior: request an acknowledgement and submit synthetic donor credentials.
+      await donation.requestAcknowledgement(donationTestConfig);
 
-    // Assertion: the donor returns home and sees the expected payment-success thank-you modal.
-    await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText(/thank you for your contribution/i)).toBeVisible();
-    await expect(
-      page.getByText(/payment was successful.*tax return was requested/i),
-    ).toBeVisible();
-    await expect(page.getByRole("button", { name: /^accept$/i })).toBeVisible();
+      // Assertion: the donor returns home and sees the expected payment-success thank-you modal.
+      await expect(page).toHaveURL(/\/$/);
+      await expect(page.getByText(/thank you for your contribution/i)).toBeVisible();
+      await expect(
+        page.getByText(/payment was successful.*tax return was requested/i),
+      ).toBeVisible();
+      await expect(page.getByRole("button", { name: /^accept$/i })).toBeVisible();
+    } finally {
+      const cleanupResult = await cleanupDonationSession(request, sessionId);
+      expect(
+        cleanupResult.removed.map((record: { type: string }) => record.type),
+      ).toContain("TaxReturnCredentials");
+    }
   });
 });

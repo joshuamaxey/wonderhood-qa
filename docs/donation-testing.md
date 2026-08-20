@@ -52,16 +52,19 @@ Copy the temporary `whsec_...` value printed by the listener into `STRIPE_WEBHOO
 
 ## QA Repository Configuration
 
-Configure these non-secret flow controls in this repository's ignored `.env` file:
+Configure these flow controls and cleanup credentials in this repository's ignored `.env` file. Never commit the populated `.env` file:
 
 ```dotenv
 BASE_URL=http://localhost:3000
 STRIPE_TEST_PAYMENT_ENABLED=false
 DONATION_TEST_AMOUNT=1
 DONATION_TEST_EMAIL=<approved test inbox>
+DONATION_TEST_API_URL=http://127.0.0.1:8000
+DONATION_CLEANUP_ADMIN_EMAIL=<approved staging admin>
+DONATION_CLEANUP_ADMIN_PASSWORD=<approved staging admin password>
 ```
 
-Keep `STRIPE_TEST_PAYMENT_ENABLED=false` until all readiness checks below pass and the skipped completed-payment scenario has been implemented from a safe test-mode browser inspection.
+Keep `STRIPE_TEST_PAYMENT_ENABLED=false` until all readiness checks below pass and automatic cleanup access is confirmed.
 
 ## Readiness Checks
 
@@ -72,10 +75,10 @@ Before enabling or completing the payment scenario:
 - Confirm `http://localhost:3000/donate` loads.
 - Confirm Stripe Embedded Checkout is using a test-mode publishable key.
 - Confirm webhook forwarding reaches `localhost:8000/payments/webhook`.
-- Confirm the local browser accepts the `tax_return_allowed` cookie after payment; it is currently marked `secure`, while the documented local frontend uses HTTP.
+- Confirm the verified Checkout Session ID reaches the local tax-acknowledgement page and is echoed through the application session header.
 - Confirm the expected post-payment redirect and tax-acknowledgement behavior with the Wonderhood team.
 - Confirm the tax-acknowledgement form associates its submission with the donation from the current Stripe session rather than another recent Stripe event.
-- Confirm a safe cleanup policy for donation, Stripe-event, and tax-acknowledgement records. The application currently has no black-box cleanup endpoint, so capture the exact Stripe Checkout Session and event identifiers for manual staging cleanup.
+- Confirm the protected staging cleanup endpoint is available and the configured cleanup account has admin access.
 
 Use Stripe's successful test card only after those checks pass:
 
@@ -92,13 +95,15 @@ Run Playwright outside the sandbox:
 npx playwright test Flows/regression/donations/donation.spec.ts
 ```
 
-The executable scenarios cover the donation panel, navigation to the donation form, native minimum-amount validation, protection of the tax-acknowledgement page before payment, and the approved successful-payment acknowledgement journey. Set `STRIPE_TEST_PAYMENT_ENABLED=true` only for an approved local test-mode run with webhook forwarding active and a confirmed manual cleanup plan.
+The executable scenarios cover the donation panel, navigation to the donation form, native minimum-amount validation, protection of the tax-acknowledgement page before payment, and successful-payment journeys with and without acknowledgement. Set `STRIPE_TEST_PAYMENT_ENABLED=true` only for an approved local test-mode run with webhook forwarding active and automatic cleanup confirmed.
 
-## Mandatory Cleanup After Every Completed Payment
+## Automatic Cleanup After Every Completed Payment
 
 A completed payment run is not finished until its staging records are removed. This requirement applies even when cleanup is not mentioned explicitly during the testing session.
 
-After each completed Stripe test payment:
+Each completed-payment flow captures its exact Checkout Session ID and calls the protected staging-only `DELETE /payments/cleanup/{session_id}` endpoint from a `finally` block. The test requires the response to confirm that the matching `Donations` record was removed; the acknowledgement flow also requires removal of its linked `TaxReturnCredentials` record.
+
+If automatic cleanup fails, do not consider the run complete. Use the captured Session ID to:
 
 1. Capture the exact Checkout Session ID (`cs_test_...`) and `checkout.session.completed` event ID (`evt_...`) from Stripe CLI or the Stripe test Dashboard.
 2. Resolve and verify the matching record in the staging `Donations` collection by `sessionId`.
@@ -107,4 +112,4 @@ After each completed Stripe test payment:
 5. Delete only those exact verified test records.
 6. Confirm the targeted records no longer exist.
 
-The application does not currently expose a black-box cleanup endpoint. Until a protected staging-only cleanup mechanism is available, cleanup is a separate manual operation and must never use a broad or production database query.
+Manual fallback cleanup must never use a broad or production database query.
