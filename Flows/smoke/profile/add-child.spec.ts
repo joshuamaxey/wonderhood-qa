@@ -5,6 +5,10 @@ import {
   openProfileChildInformation,
 } from "../../../utils/helpers/auth";
 
+const isRenderStaging = process.env.BASE_URL
+  ? new URL(process.env.BASE_URL).hostname === "wonderhood-staging-frontend.onrender.com"
+  : false;
+
 const addChildFlowData = {
   userEmail: process.env.ADD_CHILD_USER_EMAIL,
   userPassword: process.env.ADD_CHILD_USER_PASSWORD || process.env.DEFAULT_PASS,
@@ -22,8 +26,10 @@ const addChildFlowData = {
   waiverSignatureName: process.env.ADD_CHILD_WAIVER_SIGNATURE_NAME,
 };
 
-for (const [key, value] of Object.entries(addChildFlowData)) {
-  expect(value, `Missing required add-child flow environment variable: ${key}`).toBeTruthy();
+if (!isRenderStaging) {
+  for (const [key, value] of Object.entries(addChildFlowData)) {
+    expect(value, `Missing required add-child flow environment variable: ${key}`).toBeTruthy();
+  }
 }
 
 const childDisplayName = `${addChildFlowData.childFirstName!} "${addChildFlowData.childPreferredName!}" ${addChildFlowData.childLastName!}`;
@@ -56,6 +62,11 @@ async function expectChildCardToAppear(page: Page, childName: RegExp) {
 }
 
 test("Starts the add-child flow from the profile page", async ({ page }) => {
+  test.skip(
+    isRenderStaging,
+    "Blocked by QA configuration issue #4: Render staging waiver PDF handling is not configured.",
+  );
+
   // Configuration: navigate to the homepage, sign in with the shared smoke user, and remove any leftover test child before starting.
   await page.goto("/");
   await loginWithTestUser(page, {
