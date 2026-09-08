@@ -11,7 +11,7 @@ The goal of this project is to provide automated test coverage for critical user
 * Framework: Playwright
 * Language: TypeScript
 * Test Type: Black-box E2E testing (no backend access required)
-* Target: Deployed Wonderhood website
+* Target: Dedicated WonderHood staging environment on Render
 
 ---
 
@@ -48,8 +48,20 @@ npx playwright install
 Create a `.env` file based on `.env.example`:
 
 ```
-BASE_URL=https://whproject.org/
+BASE_URL=https://wonderhood-staging-frontend.onrender.com
 ```
+
+This is the normal target for local and CI Playwright runs. Keep the value in
+your untracked `.env`; do not commit environment files or credentials.
+
+The deployed staging services are:
+
+* Frontend: `https://wonderhood-staging-frontend.onrender.com`
+* Backend: `https://wonderhood-staging-backend.onrender.com`
+
+The backend is managed by the WonderHood Staging project in Render. Tests in
+this repository remain black-box browser tests and must not connect directly to
+the staging database.
 
 ---
 
@@ -105,6 +117,12 @@ Examples:
 
 Donation regression setup, safety checks, and required local test-mode configuration are documented in [`docs/donation-testing.md`](docs/donation-testing.md).
 
+The add-child smoke flow is temporarily skipped only against the dedicated
+Render staging frontend while
+[`#4`](https://github.com/joshuamaxey/wonderhood-qa/issues/4) tracks staging
+waiver PDF handling. It remains enabled for local environments with the
+documented waiver-upload bypass configured.
+
 ---
 
 ## Configuration
@@ -129,7 +147,14 @@ Tests run automatically via GitHub Actions on:
 
 This provides visibility into test results but does not block deployments.
 
-GitHub Actions reads `BASE_URL` from a repository secret named `BASE_URL`. Set that secret in the repository settings before relying on CI runs.
+GitHub Actions reads `BASE_URL` from a repository secret named `BASE_URL`. Set
+that secret to the dedicated Render staging frontend URL before relying on CI
+runs.
+
+The completed-payment donation regression is an intentional exception to the
+normal deployed-staging target. Its safety controls require a locally running
+WonderHood frontend and backend configured for Stripe test mode; see
+[`docs/donation-testing.md`](docs/donation-testing.md).
 
 ---
 

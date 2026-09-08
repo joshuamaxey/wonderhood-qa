@@ -39,6 +39,9 @@ const childBirthdayDisplayPattern = new RegExp(
   "i",
 );
 const emergencyContactPhoneDisplayPattern = /\d{3}-\d{3}-\d{4}/;
+const isRenderStaging = process.env.BASE_URL
+  ? new URL(process.env.BASE_URL).hostname === "wonderhood-staging-frontend.onrender.com"
+  : false;
 
 async function expectChildCardToAppear(page: Page, childName: RegExp) {
   const childCard = page.locator("article").filter({
@@ -56,6 +59,11 @@ async function expectChildCardToAppear(page: Page, childName: RegExp) {
 }
 
 test("Starts the add-child flow from the profile page", async ({ page }) => {
+  test.skip(
+    isRenderStaging,
+    "Blocked by QA configuration issue #4: Render staging waiver PDF handling is not configured.",
+  );
+
   // Configuration: navigate to the homepage, sign in with the shared smoke user, and remove any leftover test child before starting.
   await page.goto("/");
   await loginWithTestUser(page, {

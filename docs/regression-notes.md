@@ -25,6 +25,7 @@ Use this file to capture regression-test ideas discovered while building or main
 
 ### Add Child Flow
 
+- Verify the completed waiver shows clear pending and recoverable error feedback when child creation is slow or fails, and prevents duplicate submissions while the request is pending; staging setup is tracked in issue #4.
 - Verify the confirmation page `Download PDF copy` action downloads a waiver PDF successfully.
 - Verify the downloaded waiver PDF has the expected file type and is not empty.
 - Verify the downloaded waiver PDF content matches the completed waiver flow, including the child and parent signature details that should appear in the final document.
