@@ -147,9 +147,11 @@ Tests run automatically via GitHub Actions on:
 
 This provides visibility into test results but does not block deployments.
 
-GitHub Actions reads `BASE_URL` from a repository secret named `BASE_URL`. Set
-that secret to the dedicated Render staging frontend URL before relying on CI
-runs.
+GitHub Actions reads `BASE_URL` and the smoke-test variables documented in
+`.env.example` from repository secrets. Set `BASE_URL` to the dedicated Render
+staging frontend URL and configure the credentials and test data required by
+each enabled smoke flow. Per-flow password secrets may remain unset when the
+flow intentionally uses the `DEFAULT_PASS` fallback.
 
 The completed-payment donation regression is an intentional exception to the
 normal deployed-staging target. Its safety controls require a locally running
